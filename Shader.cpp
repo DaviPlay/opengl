@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <bits/locale_facets_nonio.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.inl>
 
@@ -96,6 +97,14 @@ void Shader::set_int(const std::string& name, const int value) const
 void Shader::set_float(const std::string& name, const float value) const
 {
     glUniform1f(glGetUniformLocation(id, name.c_str()), value);
+}
+void Shader::set_vec3(const std::string &name, const glm::vec3& vec, const int amount) const
+{
+    glUniform3fv(glGetUniformLocation(id, name.c_str()), amount, glm::value_ptr(vec));
+}
+void Shader::set_vec3(const std::string &name, float x, float y, float z, const int amount) const
+{
+    glUniform3fv(glGetUniformLocation(id, name.c_str()), amount, glm::value_ptr(glm::vec3(x, y, z)));
 }
 void Shader::set_mat4(const std::string& name, glm::mat4& mat, const int amount) const
 {

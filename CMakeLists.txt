@@ -7,7 +7,11 @@ add_executable(opengl
         stb_image.h
         Shader.cpp
         Camera.h
-        Camera.cpp)
+        Camera.cpp
+        Mesh.h
+        Mesh.cpp
+        Model.h
+        Model.cpp)
 target_sources(opengl
         PRIVATE
         main.cpp
@@ -16,6 +20,8 @@ target_sources(opengl
 find_package(glad CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(assimp CONFIG REQUIRED)
 
-target_link_libraries(opengl PRIVATE glfw OpenGL::GL glad::glad)
+target_link_libraries(opengl PRIVATE glfw OpenGL::GL glad::glad glm::glm assimp::assimp)
 target_compile_features(opengl PRIVATE cxx_std_20)
