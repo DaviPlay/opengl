@@ -4,25 +4,22 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtx/string_cast.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <filesystem>
 
 #include "stb_image.h"
 #include "Shader.h"
 #include "Camera.h"
+#include "GUIRender.h"
 #include "Model.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void render_loop(GLFWwindow* window, const Shader* shader, const Model* model);
+void render_loop(GLFWwindow* window, GUIRender& gui);
 void process_input(GLFWwindow* window);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 unsigned int load_texture(const char *path);
-
-constexpr float SCR_WIDTH { 800.0f };
-constexpr float SCR_HEIGHT { 600.0f };
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
@@ -67,10 +64,6 @@ int main()
     const Shader cube_shader("../Shaders/vertex.glsl", "../Shaders/frag.glsl");
     const Shader light_shader("../Shaders/light_vertex.glsl", "../Shaders/light_frag.glsl");
 
-    const Model model("../Assets/backpack/backpack.obj");
-
-    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-    glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_CULL_FACE);
 
@@ -86,15 +79,14 @@ int main()
     cube_shader.set_vec3("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
     cube_shader.set_vec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
-    const Shader shader_list[] {
+    Shader shader_list[] {
         cube_shader,
         light_shader
     };
-    const Model model_list[] {
-        model
-    };
 
-    render_loop(window, shader_list, model_list);
+    GUIRender gui = GUIRender(shader_list, &camera);
+
+    render_loop(window, gui);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &fbo);
@@ -103,7 +95,7 @@ int main()
     return 0;
 }
 
-void render_loop(GLFWwindow* window, const Shader* shader, const Model* model)
+void render_loop(GLFWwindow* window, GUIRender& gui)
 {
     while(!glfwWindowShouldClose(window))
     {
@@ -111,23 +103,13 @@ void render_loop(GLFWwindow* window, const Shader* shader, const Model* model)
         delta_time = current_frame - last_frame;
         last_frame = current_frame;
 
+        gui.render3D();
+        gui.render2D();
+
         process_input(window);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-        const Shader& cubes_shader { shader[0] };
-
-        cubes_shader.use();
-        cubes_shader.set_vec3("viewPos", camera.position);
-        glm::mat4 projection { glm::perspective(glm::radians(camera.fov), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f) };
-        cubes_shader.set_mat4("projection", projection);
-        glm::mat4 view { camera.get_view_matrix() };
-        cubes_shader.set_mat4("view", view);
-        glm::mat4 shader_model { glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f)) };
-        shader_model = glm::scale(shader_model, glm::vec3(0.5f, 0.5f, 0.5f));
-        cubes_shader.set_mat4("model", shader_model);
-        model[0].draw(cubes_shader);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -11,7 +11,9 @@ add_executable(opengl
         Mesh.h
         Mesh.cpp
         Model.h
-        Model.cpp)
+        Model.cpp
+        GUIRender.h
+        GUIRender.cpp)
 target_sources(opengl
         PRIVATE
         main.cpp
