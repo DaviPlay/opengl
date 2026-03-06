@@ -14,14 +14,14 @@
 #include "Model.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void render_loop(GLFWwindow* window, GUIRender& gui);
+void render_loop(GLFWwindow* window, const GUIRender& gui);
 void process_input(GLFWwindow* window);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 unsigned int load_texture(const char *path);
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera main_camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 double last_x { SCR_WIDTH / 2 };
 double last_y { SCR_HEIGHT / 2 };
@@ -64,12 +64,14 @@ int main()
     const Shader cube_shader("../Shaders/vertex.glsl", "../Shaders/frag.glsl");
     const Shader light_shader("../Shaders/light_vertex.glsl", "../Shaders/light_frag.glsl");
 
+    const Model backpack("../Assets/backpack/backpack.obj");
+
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_CULL_FACE);
 
-    unsigned int fbo;
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    //unsigned int fbo;
+    //glGenFramebuffers(1, &fbo);
+    //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -79,23 +81,31 @@ int main()
     cube_shader.set_vec3("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
     cube_shader.set_vec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
-    Shader shader_list[] {
-        cube_shader,
-        light_shader
+    const Shader *shader_list[] {
+        &cube_shader,
+        &light_shader
+    };
+    const Camera* camera_list[]
+    {
+        &main_camera
+    };
+    const Model* model_list[]
+    {
+        &backpack
     };
 
-    GUIRender gui = GUIRender(shader_list, &camera);
+    const GUIRender gui = GUIRender(shader_list, camera_list, model_list);
 
     render_loop(window, gui);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDeleteFramebuffers(1, &fbo);
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //glDeleteFramebuffers(1, &fbo);
 
     glfwTerminate();
     return 0;
 }
 
-void render_loop(GLFWwindow* window, GUIRender& gui)
+void render_loop(GLFWwindow* window, const GUIRender& gui)
 {
     while(!glfwWindowShouldClose(window))
     {
@@ -103,13 +113,13 @@ void render_loop(GLFWwindow* window, GUIRender& gui)
         delta_time = current_frame - last_frame;
         last_frame = current_frame;
 
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
         gui.render3D();
         gui.render2D();
 
         process_input(window);
-
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -119,17 +129,17 @@ void render_loop(GLFWwindow* window, GUIRender& gui)
 void process_input(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.process_keyboard(CameraAction::FORWARD, delta_time);
+        main_camera.process_keyboard(CameraAction::FORWARD, delta_time);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.process_keyboard(CameraAction::LEFT, delta_time);
+        main_camera.process_keyboard(CameraAction::LEFT, delta_time);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.process_keyboard(CameraAction::BACKWARD, delta_time);
+        main_camera.process_keyboard(CameraAction::BACKWARD, delta_time);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.process_keyboard(CameraAction::RIGHT, delta_time);
+        main_camera.process_keyboard(CameraAction::RIGHT, delta_time);
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        camera.process_keyboard(CameraAction::UP, delta_time);
+        main_camera.process_keyboard(CameraAction::UP, delta_time);
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-        camera.process_keyboard(CameraAction::DOWN, delta_time);
+        main_camera.process_keyboard(CameraAction::DOWN, delta_time);
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -138,9 +148,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         glfwSetWindowShouldClose(window, true);
 
     if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-        camera.process_keyboard(CameraAction::SPRINT, delta_time);
+        main_camera.process_keyboard(CameraAction::SPRINT, delta_time);
     if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-        camera.process_keyboard(CameraAction::WALK, delta_time);
+        main_camera.process_keyboard(CameraAction::WALK, delta_time);
 }
 
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos)
@@ -157,15 +167,15 @@ void mouse_callback(GLFWwindow* window, double x_pos, double y_pos)
     last_x = x_pos;
     last_y = y_pos;
 
-    camera.process_mouse_movement(static_cast<float>(x_offset), static_cast<float>(y_offset), delta_time);
+    main_camera.process_mouse_movement(static_cast<float>(x_offset), static_cast<float>(y_offset), delta_time);
 }
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-        camera.process_mouse_button(CameraAction::ZOOM);
+        main_camera.process_mouse_button(CameraAction::ZOOM);
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
-        camera.process_mouse_button(CameraAction::UNZOOM);
+        main_camera.process_mouse_button(CameraAction::UNZOOM);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)

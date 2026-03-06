@@ -3,8 +3,8 @@ project(opengl LANGUAGES CXX C)
 
 add_executable(opengl
         ImageLoader.cpp
-        Shader.h
         stb_image.h
+        Shader.h
         Shader.cpp
         Camera.h
         Camera.cpp
