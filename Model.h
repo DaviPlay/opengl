@@ -13,6 +13,7 @@ static constexpr float SCR_HEIGHT { 600.0f };
 class Model
 {
 public:
+    Model();
     explicit Model(const char* path);
     void draw(const Shader& shader) const;
 

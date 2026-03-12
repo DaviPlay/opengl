@@ -9,8 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.inl>
 
-Shader::Shader(const char* vertex_shader, const char* fragment_shader)
-    : id()
+Shader::Shader(const char* vertex_shader, const char* fragment_shader) : id()
 {
     std::string vertex_code;
     std::string fragment_code;

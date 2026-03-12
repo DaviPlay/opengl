@@ -13,7 +13,9 @@ add_executable(opengl
         Model.h
         Model.cpp
         GUIRender.h
-        GUIRender.cpp)
+        GUIRender.cpp
+        GUI.h
+        GUI.cpp)
 target_sources(opengl
         PRIVATE
         main.cpp

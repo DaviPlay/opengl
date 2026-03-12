@@ -31,6 +31,18 @@ bool firstMouse { true };
 float delta_time;
 float last_frame;
 
+constexpr float vertices[] = {
+    // positions          // colors           // texture coords
+    0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+    0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+   -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left
+};
+constexpr unsigned int indices[] = {
+    0, 1, 3,   // first triangle
+    1, 2, 3    // second triangle
+};
+
 int main()
 {
     glfwInit();
@@ -61,13 +73,13 @@ int main()
     }
     stbi_set_flip_vertically_on_load(true);
 
-    const Shader cube_shader("../Shaders/vertex.glsl", "../Shaders/frag.glsl");
+    const Shader shader_3d("../Shaders/vertex.glsl", "../Shaders/frag.glsl");
+    const Shader shader_2d("../Shaders/gui_vertex.glsl", "../Shaders/gui_frag.glsl");
     const Shader light_shader("../Shaders/light_vertex.glsl", "../Shaders/light_frag.glsl");
 
     const Model backpack("../Assets/backpack/backpack.obj");
 
-    glEnable(GL_STENCIL_TEST);
-    glEnable(GL_CULL_FACE);
+    const GUI arm_stamina(vertices, indices);
 
     //unsigned int fbo;
     //glGenFramebuffers(1, &fbo);
@@ -75,26 +87,18 @@ int main()
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    cube_shader.use();
-    cube_shader.set_vec3("dirLight.direction", -0.2f, 2.0f, -1.0f);
-    cube_shader.set_vec3("dirLight.ambient", 0.25f, 0.25f, 0.25f);
-    cube_shader.set_vec3("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
-    cube_shader.set_vec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
+    shader_3d.use();
+    shader_3d.set_vec3("dirLight.direction", -0.2f, 2.0f, -1.0f);
+    shader_3d.set_vec3("dirLight.ambient", 0.25f, 0.25f, 0.25f);
+    shader_3d.set_vec3("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
+    shader_3d.set_vec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
-    const Shader *shader_list[] {
-        &cube_shader,
-        &light_shader
-    };
-    const Camera* camera_list[]
-    {
-        &main_camera
-    };
-    const Model* model_list[]
-    {
-        &backpack
-    };
+    std::vector shader_list { shader_3d, shader_2d, light_shader };
+    std::vector camera_list { main_camera };
+    std::vector model_list { backpack };
+    std::vector gui_elements_list { arm_stamina };
 
-    const GUIRender gui = GUIRender(shader_list, camera_list, model_list);
+    const GUIRender gui = GUIRender(shader_list, camera_list, model_list, gui_elements_list);
 
     render_loop(window, gui);
 
@@ -114,9 +118,9 @@ void render_loop(GLFWwindow* window, const GUIRender& gui)
         last_frame = current_frame;
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-        gui.render3D();
+        //gui.render3D();
         gui.render2D();
 
         process_input(window);
