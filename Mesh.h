@@ -34,7 +34,7 @@ public:
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
 
-    explicit Mesh(std::vector<Vertex>* vertices, std::vector<unsigned int>* indices, std::vector<Texture>* textures);
+    explicit Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures);
     void draw(const Shader& shader) const;
 
 private:

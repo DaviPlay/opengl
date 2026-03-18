@@ -21,6 +21,7 @@ void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 unsigned int load_texture(const char *path);
 
+std::vector<Camera> camera_list;
 Camera main_camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 double last_x { SCR_WIDTH / 2 };
@@ -79,7 +80,7 @@ int main()
 
     const Model backpack("../Assets/backpack/backpack.obj");
 
-    const GUI arm_stamina(vertices, indices);
+    const GUI arm_stamina(vertices, indices, sizeof(vertices) / sizeof(float));
 
     //unsigned int fbo;
     //glGenFramebuffers(1, &fbo);
@@ -93,8 +94,8 @@ int main()
     shader_3d.set_vec3("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
     shader_3d.set_vec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
+    camera_list.emplace_back(main_camera);
     std::vector shader_list { shader_3d, shader_2d, light_shader };
-    std::vector camera_list { main_camera };
     std::vector model_list { backpack };
     std::vector gui_elements_list { arm_stamina };
 
@@ -118,9 +119,9 @@ void render_loop(GLFWwindow* window, const GUIRender& gui)
         last_frame = current_frame;
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //gui.render3D();
+        //gui.render3D(0);
         gui.render2D();
 
         process_input(window);
@@ -133,17 +134,17 @@ void render_loop(GLFWwindow* window, const GUIRender& gui)
 void process_input(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        main_camera.process_keyboard(CameraAction::FORWARD, delta_time);
+        camera_list[0].process_keyboard(CameraAction::FORWARD, delta_time);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        main_camera.process_keyboard(CameraAction::LEFT, delta_time);
+        camera_list[0].process_keyboard(CameraAction::LEFT, delta_time);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        main_camera.process_keyboard(CameraAction::BACKWARD, delta_time);
+        camera_list[0].process_keyboard(CameraAction::BACKWARD, delta_time);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        main_camera.process_keyboard(CameraAction::RIGHT, delta_time);
+        camera_list[0].process_keyboard(CameraAction::RIGHT, delta_time);
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        main_camera.process_keyboard(CameraAction::UP, delta_time);
+        camera_list[0].process_keyboard(CameraAction::UP, delta_time);
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-        main_camera.process_keyboard(CameraAction::DOWN, delta_time);
+        camera_list[0].process_keyboard(CameraAction::DOWN, delta_time);
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -152,9 +153,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         glfwSetWindowShouldClose(window, true);
 
     if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-        main_camera.process_keyboard(CameraAction::SPRINT, delta_time);
+        camera_list[0].process_keyboard(CameraAction::SPRINT, delta_time);
     if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-        main_camera.process_keyboard(CameraAction::WALK, delta_time);
+        camera_list[0].process_keyboard(CameraAction::WALK, delta_time);
 }
 
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos)
@@ -171,15 +172,15 @@ void mouse_callback(GLFWwindow* window, double x_pos, double y_pos)
     last_x = x_pos;
     last_y = y_pos;
 
-    main_camera.process_mouse_movement(static_cast<float>(x_offset), static_cast<float>(y_offset), delta_time);
+    camera_list[0].process_mouse_movement(static_cast<float>(x_offset), static_cast<float>(y_offset), delta_time);
 }
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-        main_camera.process_mouse_button(CameraAction::ZOOM);
+        camera_list[0].process_mouse_button(CameraAction::ZOOM);
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
-        main_camera.process_mouse_button(CameraAction::UNZOOM);
+        camera_list[0].process_mouse_button(CameraAction::UNZOOM);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)

@@ -8,8 +8,10 @@ class GUI
 public:
     const float* vertices;
     const unsigned int* indices;
+    size_t length;
 
-    explicit GUI(const float* vertices, const unsigned int* indices);
+    GUI();
+    explicit GUI(const float* vertices, const unsigned int* indices, size_t length);
 
     void draw(const Shader& shader) const;
 

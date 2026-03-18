@@ -4,11 +4,11 @@
 #include <utility>
 #include <glad/glad.h>
 
-Mesh::Mesh(std::vector<Vertex>* vertices, std::vector<unsigned int>* indices, std::vector<Texture>* textures)
+Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures)
 {
-    this->vertices = *vertices;
-    this->indices = *indices;
-    this->textures = *textures;
+    this->vertices = std::move(vertices);
+    this->indices = std::move(indices);
+    this->textures = std::move(textures);
 
     setup_mesh();
 }
@@ -48,6 +48,7 @@ void Mesh::setup_mesh()
     // weights
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, m_Weights)));
+
     glBindVertexArray(0);
 }
 
