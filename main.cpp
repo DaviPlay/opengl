@@ -12,6 +12,7 @@
 #include "Camera.h"
 #include "GUIRender.h"
 #include "Model.h"
+#include "TextRenderer.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void render_loop(GLFWwindow* window, const GUIRender& gui);
@@ -32,14 +33,21 @@ bool firstMouse { true };
 float delta_time;
 float last_frame;
 
-constexpr float vertices[] = {
+constexpr float VERTICES_ARM_STAMINA_OUTLINE[] = {
     // positions          // colors           // texture coords
-    0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-    0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-   -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left
+    0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+    0.5f, -0.7f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+   -0.5f, -0.7f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+   -0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left
 };
-constexpr unsigned int indices[] = {
+constexpr float VERTICES_ARM_STAMINA[] = {
+    // positions          // colors           // texture coords
+    0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+    0.5f, -0.7f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+   -0.5f, -0.7f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+   -0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left
+};
+constexpr unsigned int INDICES[] = {
     0, 1, 3,   // first triangle
     1, 2, 3    // second triangle
 };
@@ -76,11 +84,16 @@ int main()
 
     const Shader shader_3d("../Shaders/vertex.glsl", "../Shaders/frag.glsl");
     const Shader shader_2d("../Shaders/gui_vertex.glsl", "../Shaders/gui_frag.glsl");
+    const Shader shader_text("../Shaders/text_vertex.glsl", "../Shaders/text_frag.glsl");
     const Shader light_shader("../Shaders/light_vertex.glsl", "../Shaders/light_frag.glsl");
+
+    TextRenderer text_renderer(shader_text, SCR_WIDTH, SCR_HEIGHT);
+    text_renderer.load_font("../Assets/arial.ttf", 48);
 
     const Model backpack("../Assets/backpack/backpack.obj");
 
-    const GUI arm_stamina(vertices, indices, sizeof(vertices) / sizeof(float));
+    const GUI arm_stamina_outline(VERTICES_ARM_STAMINA_OUTLINE, INDICES, sizeof(VERTICES_ARM_STAMINA_OUTLINE) / sizeof(float));
+    const GUI arm_stamina(VERTICES_ARM_STAMINA, INDICES, sizeof(VERTICES_ARM_STAMINA) / sizeof(float));
 
     //unsigned int fbo;
     //glGenFramebuffers(1, &fbo);
@@ -95,11 +108,11 @@ int main()
     shader_3d.set_vec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
     camera_list.emplace_back(main_camera);
-    std::vector shader_list { shader_3d, shader_2d, light_shader };
+    std::vector shader_list { shader_3d, shader_2d, light_shader, shader_text };
     std::vector model_list { backpack };
-    std::vector gui_elements_list { arm_stamina };
+    std::vector gui_elements_list { arm_stamina_outline, arm_stamina };
 
-    const GUIRender gui = GUIRender(shader_list, camera_list, model_list, gui_elements_list);
+    const GUIRender gui = GUIRender(shader_list, camera_list, model_list, gui_elements_list, text_renderer);
 
     render_loop(window, gui);
 
@@ -121,10 +134,17 @@ void render_loop(GLFWwindow* window, const GUIRender& gui)
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //gui.render3D(0);
+        gui.render3D(0);
         gui.render2D();
 
         process_input(window);
+
+        if (camera_list[0].is_zooming)
+            camera_list[0].arm_stamina -= ARM_DRAIN_RATE * delta_time;
+        else
+            camera_list[0].arm_stamina *= ARM_REGEN_RATE * delta_time;
+
+        camera_list[0].arm_stamina = std::clamp(camera_list[0].arm_stamina, 0.0f, ARM_MAX_STAMINA);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -177,10 +197,10 @@ void mouse_callback(GLFWwindow* window, double x_pos, double y_pos)
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-        camera_list[0].process_mouse_button(CameraAction::ZOOM);
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
-        camera_list[0].process_mouse_button(CameraAction::UNZOOM);
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS /* && camera_list[0].arm_stamina > 0.0f */ )
+        camera_list[0].process_mouse_button(CameraAction::ZOOM, delta_time);
+    if ((button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) /* || camera_list[0].arm_stamina <= 0.0f */ )
+        camera_list[0].process_mouse_button(CameraAction::UNZOOM, delta_time);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)

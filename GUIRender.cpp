@@ -5,7 +5,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 
-GUIRender::GUIRender(std::vector<Shader>& shaders, std::vector<Camera>& cameras, std::vector<Model>& models, std::vector<GUI>& gui_elements)
+#include "TextRenderer.h"
+
+GUIRender::GUIRender(std::vector<Shader>& shaders, std::vector<Camera>& cameras, std::vector<Model>& models, std::vector<GUI>& gui_elements, TextRenderer& text_renderer) : text_renderer(text_renderer)
 {
     this->shaders = std::move(shaders);
     this->models = std::move(models);
@@ -36,6 +38,7 @@ void GUIRender::ready3D(size_t camera_index) const
     shader_model = glm::scale(shader_model, glm::vec3(0.5f, 0.5f, 0.5f));
     shader_3d.set_mat4("model", shader_model);
 
+    glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_CULL_FACE);
@@ -47,12 +50,14 @@ void GUIRender::ready2D() const
     const Shader &shader_2d = shaders[1];
     shader_2d.use();
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_STENCIL_TEST);
     glDisable(GL_CULL_FACE);
 }
 
-void GUIRender::render3D(size_t camera_index) const
+void GUIRender::render3D(const size_t camera_index) const
 {
     this->ready3D(camera_index);
     const Shader& shader_3d = shaders[0];
@@ -65,7 +70,16 @@ void GUIRender::render2D() const
 {
     this->ready2D();
     const Shader &shader_2d = shaders.at(1);
-    const GUI &arm_stamina = gui_elements.at(0);
+    const GUI &arm_stamina_outline = gui_elements.at(0);
+    const GUI &arm_stamina = gui_elements.at(1);
 
-    arm_stamina.draw(shader_2d);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    arm_stamina_outline.draw(shader_2d);
+    text_renderer.render_text(std::to_string(static_cast<int>(cameras.at(0).get().arm_stamina)), 25.0f, 25.0f, 1.0f, glm::vec3(1.0f, 0.0f, 1.0f));
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    auto model_fg = glm::mat4(1.0f);
+    model_fg = glm::translate(model_fg, glm::vec3(0.0f, 0.0f, 0.0f));
+    model_fg = glm::scale(model_fg, glm::vec3(300.0f * (cameras.at(0).get().arm_stamina / ARM_MAX_STAMINA), 20.0f, 1.0f));
+    arm_stamina.draw(shader_2d, model_fg);
 }

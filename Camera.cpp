@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
 
-Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), fov(FOV)
+Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), fov(FOV), arm_stamina(ARM_MAX_STAMINA)
 {
     this->position = position;
     this->world_up = up;
@@ -14,7 +14,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) : front
     update_camera_vectors();
 }
 
-Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), fov(FOV)
+Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), fov(FOV), arm_stamina(ARM_MAX_STAMINA)
 {
     this->position = glm::vec3(posX, posY, posZ);
     this->world_up = glm::vec3(upX, upY, upZ);
@@ -42,8 +42,20 @@ void Camera::process_keyboard(CameraAction direction, const float& delta_time)
         case CameraAction::RIGHT: position += right * velocity; break;
         case CameraAction::UP: position += up * velocity; break;
         case CameraAction::DOWN: position -= up * velocity; break;
-        case CameraAction::SPRINT: movement_speed *= 2.0f; break;
-        case CameraAction::WALK: movement_speed /= 2.0f; break;
+        case CameraAction::SPRINT:
+        {
+            movement_speed *= 2.0f;
+            is_walking = false;
+            is_sprinting = true;
+            break;
+        }
+        case CameraAction::WALK:
+        {
+            movement_speed /= 2.0f;
+            is_sprinting = false;
+            is_walking = true;
+            break;
+        }
         default: break;
     }
 }
@@ -67,12 +79,22 @@ void Camera::process_mouse_movement(float x_offset, float y_offset, const float&
 
 void Camera::process_mouse_scroll(float y_offset) {}
 
-void Camera::process_mouse_button(CameraAction camera_action)
+void Camera::process_mouse_button(CameraAction camera_action, const float& delta_time)
 {
     switch (camera_action)
     {
-        case CameraAction::ZOOM: fov -= ZOOM_AMOUNT; break;
-        case CameraAction::UNZOOM: fov += ZOOM_AMOUNT; break;
+        case CameraAction::ZOOM:
+        {
+            fov -= ZOOM_AMOUNT;
+            is_zooming = true;
+            break;
+        }
+        case CameraAction::UNZOOM:
+        {
+            fov += ZOOM_AMOUNT;
+            is_zooming = false;
+            break;
+        }
         default: break;
     }
 }

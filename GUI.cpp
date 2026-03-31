@@ -38,9 +38,14 @@ void GUI::setup_element()
     glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0);
 }
 
-void GUI::draw(const Shader& shader) const
+void GUI::draw(const Shader& shader, glm::mat4 model) const
 {
+    glBindVertexArray(VAO);
+    shader.set_mat4("model", model);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
 }

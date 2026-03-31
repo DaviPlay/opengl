@@ -75,7 +75,7 @@ void Mesh::draw(const Shader& shader) const
             number = std::to_string(heightNr++);
 
         shader.set_int("material." + name, static_cast<int>(i));
-        glBindTexture(GL_TEXTURE_2D, i);
+        glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, static_cast<int>(indices.size()), GL_UNSIGNED_INT, nullptr);

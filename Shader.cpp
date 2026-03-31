@@ -51,7 +51,7 @@ Shader::Shader(const char* vertex_shader, const char* fragment_shader) : id()
     glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetProgramInfoLog(vertex, 512, nullptr, info_log);
+        glGetShaderInfoLog(vertex, 512, nullptr, info_log);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED" << info_log << std::endl;
     }
 
@@ -61,7 +61,7 @@ Shader::Shader(const char* vertex_shader, const char* fragment_shader) : id()
     glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetProgramInfoLog(fragment, 512, nullptr, info_log);
+        glGetShaderInfoLog(fragment, 512, nullptr, info_log);
         std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED" << info_log << std::endl;
     }
 
