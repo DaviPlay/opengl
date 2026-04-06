@@ -4,7 +4,7 @@
 #include <utility>
 #include <glad/glad.h>
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
+Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures)
 {
     this->vertices = std::move(vertices);
     this->indices = std::move(indices);
@@ -48,6 +48,7 @@ void Mesh::setup_mesh()
     // weights
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void *>(offsetof(Vertex, m_Weights)));
+
     glBindVertexArray(0);
 }
 
@@ -74,7 +75,7 @@ void Mesh::draw(const Shader& shader) const
             number = std::to_string(heightNr++);
 
         shader.set_int("material." + name, static_cast<int>(i));
-        glBindTexture(GL_TEXTURE_2D, i);
+        glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, static_cast<int>(indices.size()), GL_UNSIGNED_INT, nullptr);

@@ -7,6 +7,9 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 
+static constexpr float SCR_WIDTH { 800.0f };
+static constexpr float SCR_HEIGHT { 600.0f };
+
 class Model
 {
 public:
