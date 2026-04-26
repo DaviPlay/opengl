@@ -1,0 +1,3 @@
+*.glsl text eol=lf working-tree-encoding=UTF-8
+*.vert text eol=lf working-tree-encoding=UTF-8
+*.frag text eol=lf working-tree-encoding=UTF-8

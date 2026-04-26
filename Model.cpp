@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <glad/glad.h>
 #include <assimp/postprocess.h>
 
@@ -124,6 +124,7 @@ std::vector<Texture> Model::load_material_textures(aiMaterial* mat, aiTextureTyp
             texture.id = texture_from_file(str.C_Str(), this->directory);
             texture.type = type_name;
             texture.path = str.C_Str();
+            textures.push_back(texture);
             textures_loaded.push_back(texture);
         }
 

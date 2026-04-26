@@ -1,4 +1,4 @@
-﻿#include "TextRenderer.h"
+#include "TextRenderer.h"
 
 #include <iostream>
 #include <ostream>
@@ -70,6 +70,10 @@ void TextRenderer::load_font(const std::string &fontPath, unsigned int fontSize)
 
 void TextRenderer::render_text(const std::string &text, float x, float y, float scale, glm::vec3 color)
 {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     shader.use();
     shader.set_vec3("texColor", color);
     glActiveTexture(GL_TEXTURE0);

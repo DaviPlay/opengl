@@ -1,4 +1,4 @@
-﻿#ifndef OPENGL_GUIRENDER_H
+#ifndef OPENGL_GUIRENDER_H
 #define OPENGL_GUIRENDER_H
 
 #include "Camera.h"
@@ -24,6 +24,9 @@ private:
 
     void ready2D() const;
     void ready3D(size_t camera_index) const;
+
+    unsigned int light_vao = 0;
+    unsigned int light_vbo = 0;
 };
 
 #endif

@@ -4,7 +4,8 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
 
-Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), fov(FOV), arm_stamina(ARM_MAX_STAMINA)
+Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) :
+front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), fov(FOV), arm_stamina(ARM_MAX_STAMINA), run_stamina(RUN_MAX_STAMINA)
 {
     this->position = position;
     this->world_up = up;
@@ -14,7 +15,8 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) : front
     update_camera_vectors();
 }
 
-Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), fov(FOV), arm_stamina(ARM_MAX_STAMINA)
+Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) :
+front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), fov(FOV), arm_stamina(ARM_MAX_STAMINA), run_stamina(RUN_MAX_STAMINA)
 {
     this->position = glm::vec3(posX, posY, posZ);
     this->world_up = glm::vec3(upX, upY, upZ);
@@ -29,7 +31,7 @@ glm::mat4 Camera::get_view_matrix() const
     return glm::lookAt(position, position + front, up);
 }
 
-void Camera::process_keyboard(CameraAction direction, const float& delta_time)
+void Camera::process_keyboard(const CameraAction direction, const float& delta_time)
 {
     const float velocity { movement_speed * delta_time };
     const glm::vec3 move_front { glm::normalize(glm::vec3(front.x, 0.0f, front.z)) };
@@ -102,9 +104,9 @@ void Camera::process_mouse_button(CameraAction camera_action, const float& delta
 void Camera::update_camera_vectors()
 {
     glm::vec3 direction;
-    direction.x = static_cast<float>(cos(glm::radians(yaw)) * cos(glm::radians(pitch)));
-    direction.y = static_cast<float>(sin(glm::radians(pitch)));
-    direction.z = static_cast<float>(sin(glm::radians(yaw)) * cos(glm::radians(pitch)));
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
     front = glm::normalize(direction);
     right = glm::normalize(glm::cross(front, world_up));

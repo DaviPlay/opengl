@@ -5,7 +5,6 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <bits/locale_facets_nonio.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.inl>
 
@@ -18,10 +17,20 @@ Shader::Shader(const char* vertex_shader, const char* fragment_shader) : id()
     v_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     f_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
+    namespace fs = std::filesystem;
+    auto resolve = [](const char* p) {
+        fs::path path(p);
+        if (path.is_absolute() || fs::exists(path)) return path;
+        // fall back to path relative to current executable / project
+        return fs::absolute(path);
+    };
+    const fs::path v_path = resolve(vertex_shader);
+    const fs::path f_path = resolve(fragment_shader);
+
     try
     {
-        v_shader_file.open(vertex_shader);
-        f_shader_file.open(fragment_shader);
+        v_shader_file.open(v_path);
+        f_shader_file.open(f_path);
 
         std::stringstream v_shader_stream, f_shader_stream;
         v_shader_stream << v_shader_file.rdbuf();
@@ -32,6 +41,24 @@ Shader::Shader(const char* vertex_shader, const char* fragment_shader) : id()
 
         vertex_code = v_shader_stream.str();
         fragment_code = f_shader_stream.str();
+
+        auto strip_bom = [](std::string& s) {
+            if (s.size() >= 3 &&
+                static_cast<unsigned char>(s[0]) == 0xEF &&
+                static_cast<unsigned char>(s[1]) == 0xBB &&
+                static_cast<unsigned char>(s[2]) == 0xBF)
+            {
+                s.erase(0, 3);
+            }
+        };
+        auto normalize_newlines = [](std::string& s) {
+            std::erase(s, '\r');
+        };
+
+        strip_bom(vertex_code);
+        strip_bom(fragment_code);
+        normalize_newlines(vertex_code);
+        normalize_newlines(fragment_code);
     }
     catch ([[maybe_unused]] std::ifstream::failure& e)
     {
@@ -41,6 +68,33 @@ Shader::Shader(const char* vertex_shader, const char* fragment_shader) : id()
     const char* v_shader_code = vertex_code.c_str();
     const char* f_shader_code = fragment_code.c_str();
 
+    auto check_shader = [](GLuint sh, const char* stage, const char* path) {
+        GLint ok = GL_FALSE;
+        glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
+        GLint len = 0;
+        glGetShaderiv(sh, GL_INFO_LOG_LENGTH, &len);
+        if (len > 1) {
+            std::string log(static_cast<size_t>(len), '\0');
+            glGetShaderInfoLog(sh, len, nullptr, log.data());
+            std::cout << (ok ? "[shader log] " : "ERROR::SHADER::")
+                      << stage << " (" << path << ")\n" << log << std::endl;
+        }
+        return ok == GL_TRUE;
+    };
+    auto check_program = [](GLuint pr) {
+        GLint ok = GL_FALSE;
+        glGetProgramiv(pr, GL_LINK_STATUS, &ok);
+        GLint len = 0;
+        glGetProgramiv(pr, GL_INFO_LOG_LENGTH, &len);
+        if (len > 1) {
+            std::string log(static_cast<size_t>(len), '\0');
+            glGetProgramInfoLog(pr, len, nullptr, log.data());
+            std::cout << (ok ? "[program log]\n" : "ERROR::SHADER::PROGRAM::LINKING_FAILED\n")
+                      << log << std::endl;
+        }
+        return ok == GL_TRUE;
+    };
+
     unsigned int vertex, fragment;
     int success;
     char info_log[512];
@@ -48,33 +102,19 @@ Shader::Shader(const char* vertex_shader, const char* fragment_shader) : id()
     vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex, 1, &v_shader_code, nullptr);
     glCompileShader(vertex);
-    glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertex, 512, nullptr, info_log);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED" << info_log << std::endl;
-    }
+    check_shader(vertex, "VERTEX", vertex_shader);
 
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment, 1, &f_shader_code, nullptr);
     glCompileShader(fragment);
     glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragment, 512, nullptr, info_log);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED" << info_log << std::endl;
-    }
+    check_shader(fragment, "FRAGMENT", fragment_shader);
 
     id = glCreateProgram();
     glAttachShader(id, vertex);
     glAttachShader(id, fragment);
     glLinkProgram(id);
-    glGetProgramiv(id, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramInfoLog(id, 512, nullptr, info_log);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED" << info_log << std::endl;
-    }
+    check_program(id);
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);

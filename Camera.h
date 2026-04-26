@@ -27,8 +27,14 @@ constexpr float FOV { 45.0f };
 constexpr float ZOOM_AMOUNT { 20.0f };
 
 constexpr float ARM_MAX_STAMINA { 100.0f };
+constexpr float ARM_MIN_STAMINA_TO_ZOOM { 15.0f };
 constexpr float ARM_DRAIN_RATE { 35.0f };   // per second while sprinting
 constexpr float ARM_REGEN_RATE { 20.0f };   // per second otherwise
+
+constexpr float RUN_MAX_STAMINA { 100.0f };
+constexpr float RUN_MIN_STAMINA_TO_SPRINT { 10.0f };
+constexpr float RUN_DRAIN_RATE { 15.0f };   // per second while sprinting
+constexpr float RUN_REGEN_RATE { 5.0f };   // per second otherwise
 
 class Camera
 {
@@ -45,6 +51,7 @@ public:
     float mouse_sensitivity;
     float fov;
     float arm_stamina;
+    float run_stamina;
 
     bool is_zooming;
     bool is_sprinting;
@@ -64,4 +71,4 @@ private:
     void update_camera_vectors();
 };
 
-#endif //OPENGL_CAMERA_H
+#endif
