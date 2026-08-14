@@ -5,7 +5,6 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <filesystem>
 
 #include "stb_image.h"
 #include "Shader.h"
@@ -13,21 +12,20 @@
 #include "GUIRender.h"
 #include "Model.h"
 #include "TextRenderer.h"
+#include "InputManager.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void window_refresh_callback(GLFWwindow* window);
 void window_pos_callback(GLFWwindow* window, int x, int y);
-void render_loop(GLFWwindow* window, const GUIRender& gui);
+void render_loop(GLFWwindow* window, const GUIRender& gui, InputManager& input_manager);
 static void render_frame(GLFWwindow* window);
-void process_input(GLFWwindow* window);
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void process_input(GLFWwindow* window, InputManager& input_manager);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 unsigned int load_texture(const char *path);
 
 const GUIRender* g_gui = nullptr;
-std::vector<Camera> camera_list;
-Camera main_camera(glm::vec3(0.0f, 0.0f, 3.0f));
+static std::vector<Camera> camera_list;
+static Camera main_camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 double last_x { SCR_WIDTH / 2 };
 double last_y { SCR_HEIGHT / 2 };
@@ -77,9 +75,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetWindowRefreshCallback(window, window_refresh_callback);
     glfwSetWindowPosCallback(window, window_pos_callback);
-    glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
     {
@@ -92,18 +88,18 @@ int main()
 
     stbi_set_flip_vertically_on_load(true);
 
-    const Shader shader_3d("../Shaders/vertex.glsl", "../Shaders/frag.glsl");
-    const Shader shader_2d("../Shaders/gui_vertex.glsl", "../Shaders/gui_frag.glsl");
-    const Shader shader_text("../Shaders/text_vertex.glsl", "../Shaders/text_frag.glsl");
-    const Shader light_shader("../Shaders/light_vertex.glsl", "../Shaders/light_frag.glsl");
+    Shader shader_3d("../Shaders/vertex.glsl", "../Shaders/frag.glsl");
+    Shader shader_2d("../Shaders/gui_vertex.glsl", "../Shaders/gui_frag.glsl");
+    Shader shader_text("../Shaders/text_vertex.glsl", "../Shaders/text_frag.glsl");
+    Shader light_shader("../Shaders/light_vertex.glsl", "../Shaders/light_frag.glsl");
 
-    TextRenderer text_renderer(shader_text, SCR_WIDTH, SCR_HEIGHT);
+    TextRenderer text_renderer((std::move(shader_text)), SCR_WIDTH, SCR_HEIGHT);
     text_renderer.load_font("../Assets/arial.ttf", 48);
 
-    const Model backpack("../Assets/backpack/backpack.obj");
+    Model backpack("../Assets/backpack/backpack.obj");
 
-    const GUI arm_stamina_outline(VERTICES_ARM_STAMINA_OUTLINE, INDICES, sizeof(VERTICES_ARM_STAMINA_OUTLINE) / sizeof(float));
-    const GUI arm_stamina(VERTICES_ARM_STAMINA, INDICES, sizeof(VERTICES_ARM_STAMINA) / sizeof(float));
+    GUI arm_stamina_outline(VERTICES_ARM_STAMINA_OUTLINE, INDICES, sizeof(VERTICES_ARM_STAMINA_OUTLINE) / sizeof(float));
+    GUI arm_stamina(VERTICES_ARM_STAMINA, INDICES, sizeof(VERTICES_ARM_STAMINA) / sizeof(float));
 
     //unsigned int fbo;
     //glGenFramebuffers(1, &fbo);
@@ -111,15 +107,31 @@ int main()
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+    camera_list.reserve(1);
     camera_list.emplace_back(main_camera);
-    std::vector shader_list { shader_3d, shader_2d, light_shader, shader_text };
-    std::vector model_list { backpack };
-    std::vector gui_elements_list { arm_stamina_outline, arm_stamina };
 
-    const GUIRender gui = GUIRender(shader_list, camera_list, model_list, gui_elements_list, text_renderer);
+    std::vector<Shader> shader_list;
+    shader_list.reserve(4);
+    shader_list.push_back(std::move(shader_3d));
+    shader_list.push_back(std::move(shader_2d));
+    shader_list.push_back(std::move(light_shader));
+    shader_list.push_back(std::move(shader_text));
+
+    std::vector<Model> model_list;
+    model_list.reserve(1);
+    model_list.push_back(std::move(backpack));
+
+    std::vector<GUI> gui_elements_list;
+    gui_elements_list.reserve(2);
+    gui_elements_list.push_back(std::move(arm_stamina_outline));
+    gui_elements_list.push_back(std::move(arm_stamina));
+
+    const GUIRender gui = GUIRender(std::move(shader_list), std::move(camera_list), std::move(model_list), std::move(gui_elements_list), text_renderer);
     g_gui = &gui;
 
-    render_loop(window, gui);
+    InputManager input_manager(window);
+
+    render_loop(window, gui, input_manager);
     g_gui = nullptr;
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -129,7 +141,7 @@ int main()
     return 0;
 }
 
-void render_loop(GLFWwindow* window, const GUIRender& gui)
+void render_loop(GLFWwindow* window, const GUIRender& gui, InputManager& input_manager)
 {
     while(!glfwWindowShouldClose(window))
     {
@@ -139,7 +151,9 @@ void render_loop(GLFWwindow* window, const GUIRender& gui)
 
         render_frame(window);
 
-        process_input(window);
+        input_manager.update();
+
+        process_input(window, input_manager);
 
         Camera& camera = camera_list[0];
         if (camera.is_zooming)
@@ -161,37 +175,38 @@ void render_loop(GLFWwindow* window, const GUIRender& gui)
     }
 }
 
-void process_input(GLFWwindow *window)
+void process_input(GLFWwindow *window, InputManager& input_manager)
 {
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera_list[0].process_keyboard(CameraAction::LEFT, delta_time);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera_list[0].process_keyboard(CameraAction::BACKWARD, delta_time);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera_list[0].process_keyboard(CameraAction::RIGHT, delta_time);
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        camera_list[0].process_keyboard(CameraAction::UP, delta_time);
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-        camera_list[0].process_keyboard(CameraAction::DOWN, delta_time);
+    if (input_manager.is_action_held(InputAction::FORWARD))
+        camera_list[0].process_keyboard(InputAction::FORWARD, delta_time);
+    if (input_manager.is_action_held(InputAction::LEFT))
+        camera_list[0].process_keyboard(InputAction::LEFT, delta_time);
+    if (input_manager.is_action_held(InputAction::BACKWARD))
+        camera_list[0].process_keyboard(InputAction::BACKWARD, delta_time);
+    if (input_manager.is_action_held(InputAction::RIGHT))
+        camera_list[0].process_keyboard(InputAction::RIGHT, delta_time);
+    if (input_manager.is_action_held(InputAction::UP))
+        camera_list[0].process_keyboard(InputAction::UP, delta_time);
+    if (input_manager.is_action_held(InputAction::DOWN))
+        camera_list[0].process_keyboard(InputAction::DOWN, delta_time);
+    if (input_manager.is_action_just_pressed(InputAction::SPRINT) && camera_list[0].run_stamina > RUN_MIN_STAMINA_TO_SPRINT && !camera_list[0].is_sprinting)
+        camera_list[0].process_keyboard(InputAction::SPRINT, delta_time);
+    if (input_manager.is_action_released(InputAction::SPRINT) && camera_list[0].is_sprinting)
+        camera_list[0].process_keyboard(InputAction::WALK, delta_time);
+
+    if (input_manager.is_action_held(InputAction::ZOOM) && camera_list[0].arm_stamina > ARM_MIN_STAMINA_TO_ZOOM && !camera_list[0].is_zooming)
+        camera_list[0].process_mouse_button(InputAction::ZOOM, delta_time);
+    if (input_manager.is_action_released(InputAction::ZOOM) && camera_list[0].is_zooming)
+        camera_list[0].process_mouse_button(InputAction::UNZOOM, delta_time);
 
     if (camera_list[0].arm_stamina <= 0.0f)
-        camera_list[0].process_mouse_button(CameraAction::UNZOOM, delta_time);
+        camera_list[0].process_mouse_button(InputAction::UNZOOM, delta_time);
 
     if (camera_list[0].run_stamina <= 0.0f)
-        camera_list[0].process_mouse_button(CameraAction::WALK, delta_time);
-}
+        camera_list[0].process_mouse_button(InputAction::WALK, delta_time);
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    if (input_manager.is_action_held(InputAction::EXIT))
         glfwSetWindowShouldClose(window, true);
-    
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS &&
-        camera_list[0].run_stamina > RUN_MIN_STAMINA_TO_SPRINT && !camera_list[0].is_sprinting)
-        camera_list[0].process_keyboard(CameraAction::SPRINT, delta_time);
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE && camera_list[0].is_sprinting)
-        camera_list[0].process_keyboard(CameraAction::WALK, delta_time);
 }
 
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos)
@@ -209,16 +224,6 @@ void mouse_callback(GLFWwindow* window, double x_pos, double y_pos)
     last_y = y_pos;
 
     camera_list[0].process_mouse_movement(static_cast<float>(x_offset), static_cast<float>(y_offset), delta_time);
-}
-
-void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
-{
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS &&
-        camera_list[0].arm_stamina > ARM_MIN_STAMINA_TO_ZOOM && !camera_list[0].is_zooming)
-        camera_list[0].process_mouse_button(CameraAction::ZOOM, delta_time);
-
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE && camera_list[0].is_zooming)
-        camera_list[0].process_mouse_button(CameraAction::UNZOOM, delta_time);
 }
 
 static void render_frame(GLFWwindow* window)

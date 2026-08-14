@@ -20,7 +20,7 @@ struct Character
 class TextRenderer
 {
 public:
-    TextRenderer(const Shader& shader, unsigned int width, unsigned int height);
+    TextRenderer(Shader shader, unsigned int width, unsigned int height);
     ~TextRenderer();
 
     void load_font(const std::string& fontPath, unsigned int fontSize);

@@ -1,11 +1,9 @@
 ﻿#ifndef OPENGL_CAMERA_H
 #define OPENGL_CAMERA_H
 
-#include <glad/glad.h>
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-enum class CameraAction
+enum class InputAction
 {
     FORWARD,
     BACKWARD,
@@ -16,7 +14,8 @@ enum class CameraAction
     ZOOM,
     UNZOOM,
     SPRINT,
-    WALK
+    WALK,
+    EXIT
 };
 
 constexpr float YAW { -90.0f };
@@ -62,10 +61,10 @@ public:
     explicit Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch);
 
     [[nodiscard]] glm::mat4 get_view_matrix() const;
-    void process_keyboard(CameraAction direction, const float& delta_time);
-    void process_mouse_movement(float x_offset, float y_offset, const float& delta_time, GLboolean constrain_pitch = true);
+    void process_keyboard(InputAction direction, const float& delta_time);
+    void process_mouse_movement(float x_offset, float y_offset, const float& delta_time, bool constrain_pitch = true);
     void process_mouse_scroll(float y_offset);
-    void process_mouse_button(CameraAction camera_action, const float& delta_time);
+    void process_mouse_button(InputAction camera_action, const float& delta_time);
 
 private:
     void update_camera_vectors();

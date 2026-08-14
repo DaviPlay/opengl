@@ -120,6 +120,12 @@ Shader::Shader(const char* vertex_shader, const char* fragment_shader) : id()
     glDeleteShader(fragment);
 }
 
+Shader::~Shader()
+{
+    if (id != 0)
+        glDeleteProgram(id);
+}
+
 void Shader::use() const
 {
     glUseProgram(id);

@@ -1,7 +1,8 @@
-﻿cmake_minimum_required(VERSION 4.1.2)
+﻿cmake_minimum_required(VERSION 3.20)
 project(opengl LANGUAGES CXX C)
 
 add_executable(opengl
+        main.cpp
         ImageLoader.cpp
         stb_image.h
         Shader.h
@@ -17,7 +18,9 @@ add_executable(opengl
         GUI.h
         GUI.cpp
         TextRenderer.h
-        TextRenderer.cpp)
+        TextRenderer.cpp
+        InputManager.cpp
+        InputManager.h)
 target_sources(opengl
         PRIVATE
         main.cpp

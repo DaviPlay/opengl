@@ -13,6 +13,12 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, st
     setup_mesh();
 }
 
+Mesh::~Mesh() {
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+}
+
 void Mesh::setup_mesh()
 {
     glGenVertexArrays(1, &VAO);

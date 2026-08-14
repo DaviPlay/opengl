@@ -1,7 +1,6 @@
 ﻿#include "Camera.h"
 
 #include <iostream>
-#include <GLFW/glfw3.h>
 #include <glm/gtc/quaternion.hpp>
 
 Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) :
@@ -31,27 +30,27 @@ glm::mat4 Camera::get_view_matrix() const
     return glm::lookAt(position, position + front, up);
 }
 
-void Camera::process_keyboard(const CameraAction direction, const float& delta_time)
+void Camera::process_keyboard(const InputAction direction, const float& delta_time)
 {
     const float velocity { movement_speed * delta_time };
     const glm::vec3 move_front { glm::normalize(glm::vec3(front.x, 0.0f, front.z)) };
 
     switch (direction)
     {
-        case CameraAction::FORWARD: position += move_front * velocity; break;
-        case CameraAction::BACKWARD: position -= move_front * velocity; break;
-        case CameraAction::LEFT: position -= right * velocity; break;
-        case CameraAction::RIGHT: position += right * velocity; break;
-        case CameraAction::UP: position += up * velocity; break;
-        case CameraAction::DOWN: position -= up * velocity; break;
-        case CameraAction::SPRINT:
+        case InputAction::FORWARD: position += move_front * velocity; break;
+        case InputAction::BACKWARD: position -= move_front * velocity; break;
+        case InputAction::LEFT: position -= right * velocity; break;
+        case InputAction::RIGHT: position += right * velocity; break;
+        case InputAction::UP: position += up * velocity; break;
+        case InputAction::DOWN: position -= up * velocity; break;
+        case InputAction::SPRINT:
         {
             movement_speed *= 2.0f;
             is_walking = false;
             is_sprinting = true;
             break;
         }
-        case CameraAction::WALK:
+        case InputAction::WALK:
         {
             movement_speed /= 2.0f;
             is_sprinting = false;
@@ -62,7 +61,7 @@ void Camera::process_keyboard(const CameraAction direction, const float& delta_t
     }
 }
 
-void Camera::process_mouse_movement(float x_offset, float y_offset, const float& delta_time, GLboolean constrain_pitch)
+void Camera::process_mouse_movement(float x_offset, float y_offset, const float& delta_time, bool constrain_pitch)
 {
     constexpr float sensitivity { 15.0f };
     x_offset *= sensitivity;
@@ -81,17 +80,17 @@ void Camera::process_mouse_movement(float x_offset, float y_offset, const float&
 
 void Camera::process_mouse_scroll(float y_offset) {}
 
-void Camera::process_mouse_button(CameraAction camera_action, const float& delta_time)
+void Camera::process_mouse_button(InputAction camera_action, const float& delta_time)
 {
     switch (camera_action)
     {
-        case CameraAction::ZOOM:
+        case InputAction::ZOOM:
         {
             fov -= ZOOM_AMOUNT;
             is_zooming = true;
             break;
         }
-        case CameraAction::UNZOOM:
+        case InputAction::UNZOOM:
         {
             fov += ZOOM_AMOUNT;
             is_zooming = false;

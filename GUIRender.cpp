@@ -7,7 +7,7 @@
 
 #include "TextRenderer.h"
 
-GUIRender::GUIRender(std::vector<Shader>& shaders, std::vector<Camera>& cameras, std::vector<Model>& models, std::vector<GUI>& gui_elements, TextRenderer& text_renderer) : text_renderer(text_renderer)
+GUIRender::GUIRender(std::vector<Shader> shaders, std::vector<Camera> cameras, std::vector<Model> models, std::vector<GUI> gui_elements, TextRenderer& text_renderer) : text_renderer(text_renderer)
 {
     this->shaders = std::move(shaders);
     this->models = std::move(models);

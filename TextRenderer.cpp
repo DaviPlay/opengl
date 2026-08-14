@@ -6,7 +6,7 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-TextRenderer::TextRenderer(const Shader &shader, unsigned int width, unsigned int height) : shader(shader)
+TextRenderer::TextRenderer(Shader shader, unsigned int width, unsigned int height) : shader(std::move(shader))
 {
     if (FT_Init_FreeType(&ft))
     {

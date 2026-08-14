@@ -35,10 +35,35 @@ public:
     std::vector<Texture> textures;
 
     explicit Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures);
+    ~Mesh();
+    Mesh(Mesh& model) = delete;
+    Mesh& operator=(Mesh& model) = delete;
+    Mesh(Mesh&& other) noexcept : VAO(other.VAO), VBO(other.VBO), EBO(other.EBO) {
+        other.VAO = other.VBO = other.EBO = 0;
+    }
+    Mesh& operator=(Mesh&& other) noexcept {
+        if (this != &other)
+        {
+            if (VAO != 0)
+                glDeleteVertexArrays(1, &VAO);
+            VAO = other.VAO;
+            other.VAO = 0;
+            if (VBO != 0)
+                glDeleteBuffers(1, &VBO);
+            VBO = other.VBO;
+            other.VBO = 0;
+            if (EBO != 0)
+                glDeleteBuffers(1, &EBO);
+            EBO = other.EBO;
+            other.EBO = 0;
+        }
+        return *this;
+    }
+
     void draw(const Shader& shader) const;
 
 private:
-    unsigned int VAO, VBO, EBO;
+    unsigned int VAO{}, VBO{}, EBO{};
 
     void setup_mesh();
 };

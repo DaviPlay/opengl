@@ -2,12 +2,32 @@
 #define OPENGL_SHADER_H
 
 #include <string>
+#include <glad/glad.h>
 #include <glm/fwd.hpp>
 
 class Shader
 {
 public:
     explicit Shader(const char* vertex_shader, const char* fragment_shader);
+    ~Shader();
+
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
+    Shader(Shader&& other) noexcept : id(other.id)
+    {
+        other.id = 0;   // source no longer owns it, so its ~Shader() is a no-op
+    }
+    Shader& operator=(Shader&& other) noexcept
+    {
+        if (this != &other)
+        {
+            if (id != 0)
+                glDeleteProgram(id);   // release our current resource first
+            id = other.id;
+            other.id = 0;
+        }
+        return *this;
+    }
 
     void use() const;
 

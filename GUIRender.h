@@ -10,7 +10,7 @@
 class GUIRender
 {
 public:
-    explicit GUIRender(std::vector<Shader>& shaders, std::vector<Camera>& cameras, std::vector<Model>& models, std::vector<GUI>& gui_elements, TextRenderer& text_renderer);
+    explicit GUIRender(std::vector<Shader> shaders, std::vector<Camera> cameras, std::vector<Model> models, std::vector<GUI> gui_elements, TextRenderer& text_renderer);
 
     void render2D() const;
     void render3D(size_t camera_index = 0) const;

@@ -14,6 +14,11 @@ class Model
 {
 public:
     explicit Model(const char* path);
+    Model(const Model&) = delete;
+    Model& operator=(const Model&) = delete;
+    Model(Model&&) = default;
+    Model& operator=(Model&&) = default;
+
     void draw(const Shader& shader) const;
 
 private:
