@@ -20,7 +20,9 @@ add_executable(opengl
         TextRenderer.h
         TextRenderer.cpp
         InputManager.cpp
-        InputManager.h)
+        InputManager.h
+        Transform.h
+        Entity.h)
 target_sources(opengl
         PRIVATE
         main.cpp

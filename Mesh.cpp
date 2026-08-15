@@ -1,5 +1,6 @@
 ﻿#include "Mesh.h"
 
+#include <filesystem>
 #include <iostream>
 #include <utility>
 #include <glad/glad.h>
@@ -60,6 +61,12 @@ void Mesh::setup_mesh()
 
 void Mesh::draw(const Shader& shader) const
 {
+    if (textures.empty()) {
+        // macOS strictly prohibits shaders from sampling empty texture units.
+        // If this mesh has no textures, abort drawing it to prevent the crash.
+        return;
+    }
+
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
     unsigned int normalNr = 1;

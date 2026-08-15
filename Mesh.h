@@ -38,23 +38,39 @@ public:
     ~Mesh();
     Mesh(Mesh& model) = delete;
     Mesh& operator=(Mesh& model) = delete;
-    Mesh(Mesh&& other) noexcept : VAO(other.VAO), VBO(other.VBO), EBO(other.EBO) {
+    Mesh(Mesh&& other) noexcept :
+    vertices(std::move(other.vertices)),
+    indices(std::move(other.indices)),
+    textures(std::move(other.textures)),
+    VAO(other.VAO),
+    VBO(other.VBO),
+    EBO(other.EBO)
+    {
         other.VAO = other.VBO = other.EBO = 0;
     }
+
+    // 2. Update the Move Assignment Operator to include the vectors
     Mesh& operator=(Mesh&& other) noexcept {
         if (this != &other)
         {
-            if (VAO != 0)
-                glDeleteVertexArrays(1, &VAO);
+            // Clean up current buffers
+            if (VAO != 0) glDeleteVertexArrays(1, &VAO);
+            if (VBO != 0) glDeleteBuffers(1, &VBO);
+            if (EBO != 0) glDeleteBuffers(1, &EBO);
+
+            // Move the vectors
+            vertices = std::move(other.vertices);
+            indices  = std::move(other.indices);
+            textures = std::move(other.textures);
+
+            // Steal the buffers
             VAO = other.VAO;
-            other.VAO = 0;
-            if (VBO != 0)
-                glDeleteBuffers(1, &VBO);
             VBO = other.VBO;
-            other.VBO = 0;
-            if (EBO != 0)
-                glDeleteBuffers(1, &EBO);
             EBO = other.EBO;
+
+            // Nullify the source
+            other.VAO = 0;
+            other.VBO = 0;
             other.EBO = 0;
         }
         return *this;

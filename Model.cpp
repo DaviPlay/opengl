@@ -147,10 +147,9 @@ unsigned int Model::texture_from_file(const char *path, const std::string &direc
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
-    unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-    if (data)
+    if (unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0))
     {
-        GLenum format;
+        GLenum format = 0;
         if (nrComponents == 1)
             format = GL_RED;
         else if (nrComponents == 3)
@@ -159,6 +158,7 @@ unsigned int Model::texture_from_file(const char *path, const std::string &direc
             format = GL_RGBA;
 
         glBindTexture(GL_TEXTURE_2D, textureID);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -171,8 +171,15 @@ unsigned int Model::texture_from_file(const char *path, const std::string &direc
     }
     else
     {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
+        std::cout << "\n[FATAL ERROR] Failed to load texture!" << std::endl;
+        std::cout << "Attempted Path: " << filename << std::endl;
+
+        // 2. Clean up the ghost texture
+        glDeleteTextures(1, &textureID);
         stbi_image_free(data);
+
+        // 3. Force the program to crash so you can see the console
+        exit(EXIT_FAILURE);
     }
 
     return textureID;

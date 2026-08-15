@@ -23,9 +23,9 @@ void process_input(GLFWwindow* window, InputManager& input_manager);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 unsigned int load_texture(const char *path);
 
-const GUIRender* g_gui = nullptr;
 static std::vector<Camera> camera_list;
-static Camera main_camera(glm::vec3(0.0f, 0.0f, 3.0f));
+
+const GUIRender* g_gui = nullptr;
 
 double last_x { SCR_WIDTH / 2 };
 double last_y { SCR_HEIGHT / 2 };
@@ -93,6 +93,8 @@ int main()
     Shader shader_text("../Shaders/text_vertex.glsl", "../Shaders/text_frag.glsl");
     Shader light_shader("../Shaders/light_vertex.glsl", "../Shaders/light_frag.glsl");
 
+    Camera main_camera(glm::vec3(0.0f, 0.0f, 3.0f));
+
     TextRenderer text_renderer((std::move(shader_text)), SCR_WIDTH, SCR_HEIGHT);
     text_renderer.load_font("../Assets/arial.ttf", 48);
 
@@ -126,7 +128,7 @@ int main()
     gui_elements_list.push_back(std::move(arm_stamina_outline));
     gui_elements_list.push_back(std::move(arm_stamina));
 
-    const GUIRender gui = GUIRender(std::move(shader_list), std::move(camera_list), std::move(model_list), std::move(gui_elements_list), text_renderer);
+    const GUIRender gui = GUIRender(std::move(shader_list), camera_list, std::move(model_list), std::move(gui_elements_list), text_renderer);
     g_gui = &gui;
 
     InputManager input_manager(window);
@@ -177,33 +179,35 @@ void render_loop(GLFWwindow* window, const GUIRender& gui, InputManager& input_m
 
 void process_input(GLFWwindow *window, InputManager& input_manager)
 {
+    Camera& camera = camera_list[0];
+
     if (input_manager.is_action_held(InputAction::FORWARD))
-        camera_list[0].process_keyboard(InputAction::FORWARD, delta_time);
+        camera.process_keyboard(InputAction::FORWARD, delta_time);
     if (input_manager.is_action_held(InputAction::LEFT))
-        camera_list[0].process_keyboard(InputAction::LEFT, delta_time);
+        camera.process_keyboard(InputAction::LEFT, delta_time);
     if (input_manager.is_action_held(InputAction::BACKWARD))
-        camera_list[0].process_keyboard(InputAction::BACKWARD, delta_time);
+        camera.process_keyboard(InputAction::BACKWARD, delta_time);
     if (input_manager.is_action_held(InputAction::RIGHT))
-        camera_list[0].process_keyboard(InputAction::RIGHT, delta_time);
+        camera.process_keyboard(InputAction::RIGHT, delta_time);
     if (input_manager.is_action_held(InputAction::UP))
-        camera_list[0].process_keyboard(InputAction::UP, delta_time);
+        camera.process_keyboard(InputAction::UP, delta_time);
     if (input_manager.is_action_held(InputAction::DOWN))
-        camera_list[0].process_keyboard(InputAction::DOWN, delta_time);
-    if (input_manager.is_action_just_pressed(InputAction::SPRINT) && camera_list[0].run_stamina > RUN_MIN_STAMINA_TO_SPRINT && !camera_list[0].is_sprinting)
-        camera_list[0].process_keyboard(InputAction::SPRINT, delta_time);
-    if (input_manager.is_action_released(InputAction::SPRINT) && camera_list[0].is_sprinting)
-        camera_list[0].process_keyboard(InputAction::WALK, delta_time);
+        camera.process_keyboard(InputAction::DOWN, delta_time);
+    if (input_manager.is_action_just_pressed(InputAction::SPRINT) && camera.run_stamina > RUN_MIN_STAMINA_TO_SPRINT && !camera.is_sprinting)
+        camera.process_keyboard(InputAction::SPRINT, delta_time);
+    if (input_manager.is_action_released(InputAction::SPRINT) && camera.is_sprinting)
+        camera.process_keyboard(InputAction::WALK, delta_time);
 
-    if (input_manager.is_action_held(InputAction::ZOOM) && camera_list[0].arm_stamina > ARM_MIN_STAMINA_TO_ZOOM && !camera_list[0].is_zooming)
-        camera_list[0].process_mouse_button(InputAction::ZOOM, delta_time);
-    if (input_manager.is_action_released(InputAction::ZOOM) && camera_list[0].is_zooming)
-        camera_list[0].process_mouse_button(InputAction::UNZOOM, delta_time);
+    if (input_manager.is_action_held(InputAction::ZOOM) && camera.arm_stamina > ARM_MIN_STAMINA_TO_ZOOM && !camera.is_zooming)
+        camera.process_mouse_button(InputAction::ZOOM, delta_time);
+    if (input_manager.is_action_released(InputAction::ZOOM) && camera.is_zooming)
+        camera.process_mouse_button(InputAction::UNZOOM, delta_time);
 
-    if (camera_list[0].arm_stamina <= 0.0f)
-        camera_list[0].process_mouse_button(InputAction::UNZOOM, delta_time);
+    if (camera.arm_stamina <= 0.0f)
+        camera.process_mouse_button(InputAction::UNZOOM, delta_time);
 
-    if (camera_list[0].run_stamina <= 0.0f)
-        camera_list[0].process_mouse_button(InputAction::WALK, delta_time);
+    if (camera.run_stamina <= 0.0f)
+        camera.process_mouse_button(InputAction::WALK, delta_time);
 
     if (input_manager.is_action_held(InputAction::EXIT))
         glfwSetWindowShouldClose(window, true);
@@ -211,6 +215,8 @@ void process_input(GLFWwindow *window, InputManager& input_manager)
 
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos)
 {
+    if (camera_list.empty()) return;
+
     if (firstMouse)
     {
         last_x = x_pos;
